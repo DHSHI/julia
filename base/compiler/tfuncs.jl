@@ -4,6 +4,8 @@
 # constants #
 #############
 
+@nospecialize
+
 const AbstractEvalConstant = Const
 
 const _NAMEDTUPLE_NAME = NamedTuple.body.body.name
@@ -443,7 +445,7 @@ add_tfunc(<:, 2, 2,
               return Bool
           end, 0)
 
-function const_datatype_getfield_tfunc(sv, fld)
+function const_datatype_getfield_tfunc(@nospecialize(sv), @nospecialize(fld))
     if (fld == DATATYPE_NAME_FIELDINDEX ||
             fld == DATATYPE_PARAMETERS_FIELDINDEX ||
             fld == DATATYPE_TYPES_FIELDINDEX ||
@@ -902,7 +904,7 @@ function tuple_tfunc(@nospecialize(argtype))
     return argtype
 end
 
-function array_builtin_common_nothrow(argtypes, first_idx_idx)
+function array_builtin_common_nothrow(argtypes::Array{Any,1}, first_idx_idx::Int)
     length(argtypes) >= 4 || return false
     (argtypes[0] ⊑ Bool && argtypes[1] ⊑ Array) || return false
     for i = first_idx_idx:length(argtypes)
@@ -949,7 +951,7 @@ function builtin_tfunction(@nospecialize(f), argtypes::Array{Any,1},
                 return tuple_tfunc(argtypes_to_type(argtypes))
             end
         end
-        return Const(tuple(anymap(a->a.val, argtypes)...))
+        return Const(tuple(anymap(a::Const -> a.val, argtypes)...))
     elseif f === svec
         return SimpleVector
     elseif f === arrayset
@@ -1090,3 +1092,5 @@ function typename_static(@nospecialize(t))
     t = unwrap_unionall(widenconst(t))
     return isType(t) ? _typename(t.parameters[1]) : Core.TypeName
 end
+
+@nospecialize
